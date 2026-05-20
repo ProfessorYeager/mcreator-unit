@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCreator Unit · ECS2025</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --dirt: #8B6340;
+      --dirt-dark: #5A3A1A;
+      --dirt-light: #A07850;
+      --grass: #5C8A3C;
+      --grass-bright: #6DAA4C;
+      --grass-dark: #3B5C24;
+      --stone: #7A7A7A;
+      --stone-dark: #4A4A4A;
+      --gold: #D4A017;
+      --gold-bright: #F0C040;
+      --redstone: #C0392B;
+      --redstone-bright: #E74C3C;
+      --diamond: #4DE6E6;
+      --diamond-dark: #1BAAAA;
+      --sky: #5BA3E0;
+      --ender: #2D1F4A;
+      --ender-light: #A07CCC;
+      --ender-bright: #C090E8;
+      --obsidian: #1A1230;
+      --cream: #F5EDD8;
+      --parchment: #E8DFC0;
+      --ink: #1A1208;
+
+      --w1: #8B6340;
+      --w1-bg: #2A1E12;
+      --w1-accent: #D4A050;
+      --w2: #C0392B;
+      --w2-bg: #1E0A08;
+      --w2-accent: #E86050;
+      --w3: #1BAAAA;
+      --w3-bg: #021E1E;
+      --w3-accent: #40D8D8;
+      --w4: #7050A0;
+      --w4-bg: #180B28;
+      --w4-accent: #C080E8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0D0D0D;
+      color: var(--cream);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── PIXEL GRID BG ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      padding: 48px 24px 32px;
+      text-align: center;
+      background: linear-gradient(180deg, #1A3A0A 0%, #0D1A08 60%, transparent 100%);
+      border-bottom: 4px solid var(--grass-dark);
+    }
+
+    .hero-eyebrow {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      color: var(--grass-bright);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .hero-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(18px, 4vw, 32px);
+      color: var(--gold-bright);
+      text-shadow: 4px 4px 0 #6B5000, 2px 2px 0 #3A2800;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .hero-sub {
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      color: var(--grass-bright);
+      letter-spacing: 2px;
+      margin-bottom: 24px;
+    }
+
+    .grass-strip {
+      display: flex;
+      width: 100%;
+      overflow: hidden;
+      margin: 0;
+    }
+
+    .grass-block {
+      width: 32px;
+      height: 16px;
+      flex-shrink: 0;
+      background: var(--grass);
+      border-bottom: 4px solid var(--grass-dark);
+    }
+
+    .grass-block:nth-child(odd) { background: var(--grass-bright); }
+
+    /* ─── LIFECYCLE BANNER ─── */
+    .lifecycle {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 20px 24px;
+      background: rgba(0,0,0,0.6);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .lc-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lc-pill {
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      letter-spacing: 2px;
+      padding: 6px 14px;
+      border: 2px solid;
+    }
+
+    .lc-arrow {
+      font-family: 'VT323', monospace;
+      font-size: 22px;
+      color: rgba(255,255,255,0.3);
+      padding: 0 4px;
+    }
+
+    .lc-1 { border-color: var(--w1-accent); color: var(--w1-accent); background: rgba(139,99,64,0.2); }
+    .lc-2 { border-color: var(--w2-accent); color: var(--w2-accent); background: rgba(192,57,43,0.2); }
+    .lc-3 { border-color: var(--w3-accent); color: var(--w3-accent); background: rgba(27,170,170,0.2); }
+    .lc-4 { border-color: var(--w4-accent); color: var(--w4-accent); background: rgba(112,80,160,0.2); }
+
+    /* ─── MAIN CONTENT ─── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ─── WEEK SECTIONS ─── */
+    .week {
+      margin-bottom: 48px;
+    }
+
+    .week-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      margin-bottom: 16px;
+      border-left: 6px solid;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .week-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent 0,
+        transparent 8px,
+        rgba(255,255,255,0.015) 8px,
+        rgba(255,255,255,0.015) 16px
+      );
+    }
+
+    .wh-1 { background: var(--w1-bg); border-color: var(--w1); box-shadow: inset 0 0 40px rgba(139,99,64,0.15); }
+    .wh-2 { background: var(--w2-bg); border-color: var(--w2); box-shadow: inset 0 0 40px rgba(192,57,43,0.15); }
+    .wh-3 { background: var(--w3-bg); border-color: var(--w3); box-shadow: inset 0 0 40px rgba(27,170,170,0.15); }
+    .wh-4 { background: var(--w4-bg); border-color: var(--w4); box-shadow: inset 0 0 40px rgba(112,80,160,0.15); }
+
+    .week-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .week-label {
+      font-family: 'VT323', monospace;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 2px;
+    }
+
+    .week-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(10px, 2.5vw, 15px);
+      line-height: 1.4;
+    }
+
+    .wt-1 { color: var(--w1-accent); }
+    .wt-2 { color: var(--w2-accent); }
+    .wt-3 { color: var(--w3-accent); }
+    .wt-4 { color: var(--w4-accent); }
+
+    .week-meta {
+      margin-left: auto;
+      font-family: 'VT323', monospace;
+      font-size: 15px;
+      opacity: 0.5;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ─── DAY CARDS ─── */
+    .days {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .day-card {
+      border: 1px solid;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .day-card:hover {
+      transform: translateX(3px);
+    }
+
+    .dc-1 { background: var(--w1-bg); border-color: rgba(212,160,80,0.3); }
+    .dc-2 { background: var(--w2-bg); border-color: rgba(232,96,80,0.3); }
+    .dc-3 { background: var(--w3-bg); border-color: rgba(64,216,216,0.3); }
+    .dc-4 { background: var(--w4-bg); border-color: rgba(192,128,232,0.3); }
+
+    .dc-1:hover { box-shadow: 4px 0 20px rgba(212,160,80,0.2), -1px 0 0 var(--w1-accent); }
+    .dc-2:hover { box-shadow: 4px 0 20px rgba(232,96,80,0.2), -1px 0 0 var(--w2-accent); }
+    .dc-3:hover { box-shadow: 4px 0 20px rgba(64,216,216,0.2), -1px 0 0 var(--w3-accent); }
+    .dc-4:hover { box-shadow: 4px 0 20px rgba(192,128,232,0.2), -1px 0 0 var(--w4-accent); }
+
+    .day-toggle-btn {
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .day-num {
+      font-family: 'VT323', monospace;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 3px 10px;
+      border: 1px solid;
+      flex-shrink: 0;
+    }
+
+    .dn-1 { color: var(--w1-accent); border-color: var(--w1-accent); background: rgba(212,160,80,0.1); }
+    .dn-2 { color: var(--w2-accent); border-color: var(--w2-accent); background: rgba(232,96,80,0.1); }
+    .dn-3 { color: var(--w3-accent); border-color: var(--w3-accent); background: rgba(64,216,216,0.1); }
+    .dn-4 { color: var(--w4-accent); border-color: var(--w4-accent); background: rgba(192,128,232,0.1); }
+
+    .day-name-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--cream);
+    }
+
+    .day-chevron {
+      margin-left: auto;
+      font-size: 18px;
+      color: rgba(255,255,255,0.3);
+      transition: transform 0.25s;
+      flex-shrink: 0;
+    }
+
+    .day-chevron.open { transform: rotate(90deg); color: rgba(255,255,255,0.6); }
+
+    .day-body {
+      display: none;
+      padding: 0 18px 18px;
+    }
+
+    .day-body.open { display: block; }
+
+    /* ─── OBJECTIVE GRID ─── */
+    .obj-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .obj-grid { grid-template-columns: 1fr; }
+    }
+
+    .obj-block {
+      padding: 12px;
+      border-top: 2px solid;
+      position: relative;
+    }
+
+    .obj-label {
+      font-family: 'VT323', monospace;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .obj-text {
+      font-size: 13px;
+      font-weight: 300;
+      line-height: 1.6;
+      color: rgba(245,237,216,0.8);
+    }
+
+    .ob-what-1 { background: rgba(212,160,80,0.07); border-color: var(--w1-accent); }
+    .ob-why-1  { background: rgba(91,163,224,0.07); border-color: #5BA3E0; }
+    .ob-how-1  { background: rgba(92,138,60,0.07);  border-color: var(--grass); }
+    .ob-what-1 .obj-label { color: var(--w1-accent); }
+    .ob-why-1 .obj-label  { color: #5BA3E0; }
+    .ob-how-1 .obj-label  { color: var(--grass-bright); }
+
+    .ob-what-2 { background: rgba(232,96,80,0.07); border-color: var(--w2-accent); }
+    .ob-why-2  { background: rgba(91,163,224,0.07); border-color: #5BA3E0; }
+    .ob-how-2  { background: rgba(92,138,60,0.07);  border-color: var(--grass); }
+    .ob-what-2 .obj-label { color: var(--w2-accent); }
+    .ob-why-2 .obj-label  { color: #5BA3E0; }
+    .ob-how-2 .obj-label  { color: var(--grass-bright); }
+
+    .ob-what-3 { background: rgba(64,216,216,0.07); border-color: var(--w3-accent); }
+    .ob-why-3  { background: rgba(128,192,255,0.07); border-color: #80C0FF; }
+    .ob-how-3  { background: rgba(96,224,96,0.07);  border-color: #60E060; }
+    .ob-what-3 .obj-label { color: var(--w3-accent); }
+    .ob-why-3 .obj-label  { color: #80C0FF; }
+    .ob-how-3 .obj-label  { color: #60E060; }
+
+    .ob-what-4 { background: rgba(192,128,232,0.07); border-color: var(--w4-accent); }
+    .ob-why-4  { background: rgba(144,176,255,0.07); border-color: #90B0FF; }
+    .ob-how-4  { background: rgba(144,216,144,0.07); border-color: #90D890; }
+    .ob-what-4 .obj-label { color: var(--w4-accent); }
+    .ob-why-4 .obj-label  { color: #90B0FF; }
+    .ob-how-4 .obj-label  { color: #90D890; }
+
+    /* ─── RESOURCE LINKS ─── */
+    .resources {
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .res-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'VT323', monospace;
+      font-size: 15px;
+      letter-spacing: 1px;
+      padding: 5px 12px;
+      border: 1px solid;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .res-link::before { content: '▶ '; font-size: 10px; }
+
+    .rl-1 { color: var(--w1-accent); border-color: rgba(212,160,80,0.4); }
+    .rl-1:hover { background: rgba(212,160,80,0.15); color: #FFD070; }
+
+    .rl-2 { color: var(--w2-accent); border-color: rgba(232,96,80,0.4); }
+    .rl-2:hover { background: rgba(232,96,80,0.15); color: #FF8070; }
+
+    .rl-3 { color: var(--w3-accent); border-color: rgba(64,216,216,0.4); }
+    .rl-3:hover { background: rgba(64,216,216,0.15); color: #70EEEE; }
+
+    .rl-4 { color: var(--w4-accent); border-color: rgba(192,128,232,0.4); }
+    .rl-4:hover { background: rgba(192,128,232,0.15); color: #D0A0FF; }
+
+    /* ─── WORKSHEET BADGES ─── */
+    .worksheets {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .ws-badge {
+      font-family: 'VT323', monospace;
+      font-size: 13px;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      text-decoration: none;
+      border: 1px dashed;
+      transition: background 0.15s;
+    }
+
+    .ws-1 { color: rgba(212,160,80,0.7); border-color: rgba(212,160,80,0.3); }
+    .ws-1:hover { background: rgba(212,160,80,0.1); color: var(--w1-accent); }
+
+    .ws-section-label {
+      font-family: 'VT323', monospace;
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.3);
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ─── WEEK DIVIDER ─── */
+    .week-divider {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 48px;
+      opacity: 0.4;
+    }
+
+    .wd-block {
+      height: 6px;
+      flex: 1;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: #080808;
+      border-top: 3px solid var(--grass-dark);
+      padding: 24px;
+      text-align: center;
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.25);
+    }
+
+    footer span { color: var(--grass-bright); }
+
+    /* ─── INSTALL SECTION ─── */
+    .install-section {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .install-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'VT323', monospace;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: var(--w4-accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0;
+    }
+
+    .install-body { display: none; }
+    .install-body.open { display: block; }
+
+    .install-steps {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      counter-reset: step;
+    }
+
+    .install-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: rgba(245,237,216,0.75);
+      line-height: 1.5;
+      counter-increment: step;
+    }
+
+    .step-num {
+      font-family: 'VT323', monospace;
+      font-size: 15px;
+      color: var(--w4-accent);
+      flex-shrink: 0;
+      width: 24px;
+    }
+
+    code {
+      font-family: 'VT323', monospace;
+      font-size: 14px;
+      background: rgba(255,255,255,0.08);
+      padding: 1px 6px;
+      color: var(--diamond);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">Salem Public Schools · CTE · ECS2025</div>
+    <h1 class="hero-title">MCreator<br>Minecraft Mod Unit</h1>
+    <div class="hero-sub">Exploratory Computer Science · Spring 2026</div>
+    <div class="hero-sub" style="font-size:16px;opacity:0.6;letter-spacing:1px;">15 sessions · 54 min each · Freshmen cohort</div>
+  </header>
+
+  <div class="grass-strip" id="grass-strip"></div>
+
+  <!-- LIFECYCLE -->
+  <div class="lifecycle">
+    <div class="lc-step"><span class="lc-pill lc-1">⛏ Design</span></div>
+    <span class="lc-arrow">→</span>
+    <div class="lc-step"><span class="lc-pill lc-2">⚡ Logic</span></div>
+    <span class="lc-arrow">→</span>
+    <div class="lc-step"><span class="lc-pill lc-3">🗃 Interface</span></div>
+    <span class="lc-arrow">→</span>
+    <div class="lc-step"><span class="lc-pill lc-4">📦 Ship It</span></div>
+  </div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WEEK 1 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="week">
+      <div class="week-header wh-1">
+        <div class="week-icon">⛏</div>
+        <div>
+          <div class="week-label">Week 1</div>
+          <h2 class="week-title wt-1">Textures &amp; Blocks</h2>
+        </div>
+        <div class="week-meta">3 sessions<br>Tue – Thu</div>
+      </div>
+
+      <div class="days">
+
+        <!-- Day 1 -->
+        <div class="day-card dc-1">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-1">DAY 1</span>
+            <span class="day-name-text">Making a Project and Texture</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-1">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Create a new MCreator workspace and design a custom 16×16 texture.</div>
+              </div>
+              <div class="obj-block ob-why-1">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">Every mod starts with art. Students immediately see their creativity become something tangible and in-game.</div>
+              </div>
+              <div class="obj-block ob-how-1">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Launch MCreator, create a new workspace, open the texture editor, and draw an original item or block sprite.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">📄 Worksheets</span>
+            <div class="worksheets">
+              <a class="ws-badge ws-1" href="https://mcreator.net/repository/edu/worksheets/1.1%20Making%20a%20block%20-%20Making%20a%20new%20project.pdf" target="_blank">1.1 Making a New Project</a>
+              <a class="ws-badge ws-1" href="https://mcreator.net/repository/edu/worksheets/1.2%20Making%20a%20block%20-%20Drawing%20a%20texture.pdf" target="_blank">1.2 Drawing a Texture</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 2 -->
+        <div class="day-card dc-1">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-1">DAY 2</span>
+            <span class="day-name-text">Making and Testing a Block</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-1">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Turn a custom texture into a functional, placeable Minecraft block.</div>
+              </div>
+              <div class="obj-block ob-why-1">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">This closes the loop — design becomes something interactive. Students feel the difference between art and software.</div>
+              </div>
+              <div class="obj-block ob-how-1">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Use the Block element wizard, assign the texture, build the mod, and test it in MCreator's built-in Minecraft environment.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">📄 Worksheets</span>
+            <div class="worksheets">
+              <a class="ws-badge ws-1" href="https://mcreator.net/repository/edu/worksheets/1.3%20Making%20a%20block%20-%20Making%20a%20block.pdf" target="_blank">1.3 Making a Block</a>
+              <a class="ws-badge ws-1" href="https://mcreator.net/repository/edu/worksheets/1.4%20Making%20a%20block%20-%20Testing%20a%20block.pdf" target="_blank">1.4 Testing a Block</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day 3 -->
+        <div class="day-card dc-1">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-1">DAY 3</span>
+            <span class="day-name-text">Material Packs</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-1">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Group related textures into a cohesive material pack — a wood set, ore set, or themed collection.</div>
+              </div>
+              <div class="obj-block ob-why-1">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">Professional developers think in systems, not one-offs. Consistency and theming are design fundamentals.</div>
+              </div>
+              <div class="obj-block ob-how-1">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Design 3–4 related textures, apply them across a matching set of blocks, and test the full pack together in-game.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">📄 Worksheet</span>
+            <div class="worksheets">
+              <a class="ws-badge ws-1" href="https://mcreator.net/repository/edu/worksheets/1.5%20Making%20a%20block%20-%20Making%20material%20pack.pdf" target="_blank">1.5 Making a Material Pack</a>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-1" href="https://mcreator.net/wiki/using-mcreator-workshops-and-stem-programs#wiki-index-1" target="_blank">MCreator STEM Workshop Guide</a>
+              <a class="res-link rl-1" href="https://www.youtube.com/playlist?list=PLAeL-oIFIEng_cJYH22jCHt2w26-Y-3hV" target="_blank">Basic Tutorials (YouTube)</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="week-divider">
+      <div class="wd-block" style="background:var(--w1);"></div>
+      <div class="wd-block" style="background:var(--w2);"></div>
+      <div class="wd-block" style="background:var(--w3);"></div>
+      <div class="wd-block" style="background:var(--w4);"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WEEK 2 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="week">
+      <div class="week-header wh-2">
+        <div class="week-icon">⚡</div>
+        <div>
+          <div class="week-label">Week 2</div>
+          <h2 class="week-title wt-2">Procedures &amp; Logic</h2>
+        </div>
+        <div class="week-meta">4 sessions<br>Tue – Fri</div>
+      </div>
+
+      <div class="days">
+
+        <!-- Days 1-2 -->
+        <div class="day-card dc-2">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-2">DAYS 1–2</span>
+            <span class="day-name-text">Event Triggers &amp; Conditions</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-2">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Attach a procedure to a block so something happens when a player interacts with it, with an if/else condition controlling the outcome.</div>
+              </div>
+              <div class="obj-block ob-why-2">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">This is the leap from art to programming — students go from "what it looks like" to "what it does." Event-driven logic is the foundation of all software.</div>
+              </div>
+              <div class="obj-block ob-how-2">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Open the procedure editor, wire a trigger (right-click, walk-over) to an action, then add a condition block to control behavior based on game state.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-2" href="https://mcreator.net/wiki/procedure-system" target="_blank">Procedure System Wiki</a>
+              <a class="res-link rl-2" href="https://www.youtube.com/playlist?list=PLAeL-oIFIEngf6S4p5X5CBd4GyWLUVaHA" target="_blank">Procedures Tutorial Playlist</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Days 3-4 -->
+        <div class="day-card dc-2">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-2">DAYS 3–4</span>
+            <span class="day-name-text">Variables &amp; Chained Procedures</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-2">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Store and track values using variables, then call one procedure from another to create compound, reusable behavior.</div>
+              </div>
+              <div class="obj-block ob-why-2">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">State and reusability are two pillars of real coding. Students see why programmers break logic into pieces — and why that makes things more powerful, not less.</div>
+              </div>
+              <div class="obj-block ob-how-2">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Create a counter variable, build a second procedure that reads and modifies it, then call one procedure from another to produce compound behavior.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-2" href="https://mcreator.net/wiki/variables" target="_blank">How to Use Variables</a>
+              <a class="res-link rl-2" href="https://mcreator.net/wiki/procedure-system" target="_blank">Procedure System Wiki</a>
+              <a class="res-link rl-2" href="https://www.youtube.com/playlist?list=PLAeL-oIFIEnir9JwKRerYPi4UjQSJSYMS" target="_blank">MCreator Tips &amp; Tricks</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="week-divider">
+      <div class="wd-block" style="background:var(--w2);"></div>
+      <div class="wd-block" style="background:var(--w3);"></div>
+      <div class="wd-block" style="background:var(--w4);"></div>
+      <div class="wd-block" style="background:var(--w1);"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WEEK 3 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="week">
+      <div class="week-header wh-3">
+        <div class="week-icon">🗃</div>
+        <div>
+          <div class="week-label">Week 3</div>
+          <h2 class="week-title wt-3">GUIs &amp; Inventory Slots</h2>
+        </div>
+        <div class="week-meta">4 sessions<br>Tue – Fri</div>
+      </div>
+
+      <div class="days">
+
+        <!-- Days 1-2 -->
+        <div class="day-card dc-3">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-3">DAYS 1–2</span>
+            <span class="day-name-text">Building a Custom GUI</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-3">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Design a custom inventory screen with labeled slots for a block — like a crafting station, storage chest, or custom machine.</div>
+              </div>
+              <div class="obj-block ob-why-3">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">GUIs are how users talk to software. Designing one teaches UI thinking and connects visual layout to backend logic — a pattern that applies everywhere in tech.</div>
+              </div>
+              <div class="obj-block ob-how-3">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Open the GUI element builder, place slots and labels on the design canvas, link the GUI to a block, then open it in-game to verify the layout.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-3" href="https://mcreator.net/wiki/making-guis-slots" target="_blank">Making GUIs with Slots</a>
+              <a class="res-link rl-3" href="https://mcreator.net/wiki/gui-editor" target="_blank">GUI Editor Wiki</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Days 3-4 -->
+        <div class="day-card dc-3">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-3">DAYS 3–4</span>
+            <span class="day-name-text">Wiring GUIs to Procedures</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-3">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Make the GUI do something — slots respond to items, state changes, and buttons trigger procedures.</div>
+              </div>
+              <div class="obj-block ob-why-3">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">This is full-stack thinking: front end (the screen) talks to back end (the procedure). Understanding that connection is the core of all software development.</div>
+              </div>
+              <div class="obj-block ob-how-3">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Attach slot-change events to procedures, test user flows in-game, then iterate on usability based on peer feedback.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-3" href="https://mcreator.net/wiki/making-guis-slots" target="_blank">Making GUIs with Slots</a>
+              <a class="res-link rl-3" href="https://mcreator.net/wiki/procedure-system" target="_blank">Procedure System Wiki</a>
+              <a class="res-link rl-3" href="https://mcreator.net/wiki/variables" target="_blank">How to Use Variables</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="week-divider">
+      <div class="wd-block" style="background:var(--w3);"></div>
+      <div class="wd-block" style="background:var(--w4);"></div>
+      <div class="wd-block" style="background:var(--w1);"></div>
+      <div class="wd-block" style="background:var(--w2);"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- WEEK 4 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <section class="week">
+      <div class="week-header wh-4">
+        <div class="week-icon">📦</div>
+        <div>
+          <div class="week-label">Week 4</div>
+          <h2 class="week-title wt-4">Export, Install &amp; Publish</h2>
+        </div>
+        <div class="week-meta">4 sessions<br>Tue – Fri</div>
+      </div>
+
+      <div class="days">
+
+        <!-- Days 1-2 -->
+        <div class="day-card dc-4">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-4">DAYS 1–2</span>
+            <span class="day-name-text">Exporting &amp; Installing a Mod</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-4">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Export the finished mod as a distributable <code>.jar</code> file and install it in a real Minecraft instance using NeoForge.</div>
+              </div>
+              <div class="obj-block ob-why-4">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">"Shipping" software is its own skill, distinct from building it. Students experience the full development lifecycle and learn that deployment has real steps.</div>
+              </div>
+              <div class="obj-block ob-how-4">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Click Export in MCreator, locate the <code>.jar</code> output, drop it into the NeoForge <code>mods</code> folder, and launch Minecraft to confirm it loads without errors.</div>
+              </div>
+            </div>
+
+            <!-- Install guide expandable -->
+            <div class="install-section">
+              <button class="install-toggle" onclick="toggleInstall(this)">
+                ▶ Quick Install Reference
+              </button>
+              <div class="install-body">
+                <div class="install-steps">
+                  <div class="install-step"><span class="step-num">1.</span><span>In MCreator, click the <strong>Export</strong> button in the top toolbar. Enter your mod details and click Export — your <code>.jar</code> file is saved to a location you choose.</span></div>
+                  <div class="install-step"><span class="step-num">2.</span><span>Install <strong>NeoForge</strong> (for Minecraft 1.20.2+) or <strong>Forge</strong> (for 1.20.1 and below) matching the exact version MCreator used. Find the version in MCreator's About window.</span></div>
+                  <div class="install-step"><span class="step-num">3.</span><span>In the Minecraft Launcher, create a new Installation. Set the version to match your Forge/NeoForge install. Set a custom game directory to keep mods isolated (e.g. <code>.minecraft/installations/mcreator-mods</code>).</span></div>
+                  <div class="install-step"><span class="step-num">4.</span><span>Launch the game once to generate the <code>mods</code> folder, then close it.</span></div>
+                  <div class="install-step"><span class="step-num">5.</span><span>Navigate to your installation's <code>mods</code> folder and drag in your <code>.jar</code> file.</span></div>
+                  <div class="install-step"><span class="step-num">6.</span><span>Launch again. If it reaches the main menu, your mod is installed. If it crashes, check for version mismatches or missing dependencies.</span></div>
+                </div>
+              </div>
+            </div>
+
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-4" href="https://mcreator.net/wiki/exporting-mods-and-installing-them" target="_blank">Exporting &amp; Installing Mods Wiki</a>
+              <a class="res-link rl-4" href="https://projects.neoforged.net/neoforged/neoforge" target="_blank">Download NeoForge</a>
+              <a class="res-link rl-4" href="https://files.minecraftforge.net/net/minecraftforge/forge/" target="_blank">Download Minecraft Forge</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Days 3-4 -->
+        <div class="day-card dc-4">
+          <button class="day-toggle-btn" onclick="toggleDay(this)" aria-expanded="false">
+            <span class="day-num dn-4">DAYS 3–4</span>
+            <span class="day-name-text">Publishing to the Community</span>
+            <span class="day-chevron">▶</span>
+          </button>
+          <div class="day-body">
+            <div class="obj-grid">
+              <div class="obj-block ob-what-4">
+                <div class="obj-label">What</div>
+                <div class="obj-text">Write a mod description, take in-game screenshots, and publish the finished project to the MCreator community platform.</div>
+              </div>
+              <div class="obj-block ob-why-4">
+                <div class="obj-label">Why</div>
+                <div class="obj-text">Documentation and portfolio skills are inseparable from development. Real software ships with a README, a description, and an audience in mind.</div>
+              </div>
+              <div class="obj-block ob-how-4">
+                <div class="obj-label">How</div>
+                <div class="obj-text">Write a name, description, and usage guide. Take in-game screenshots. Submit to MCreator's site. Peer-review two classmates' listings for clarity and completeness.</div>
+              </div>
+            </div>
+            <span class="ws-section-label">🔗 Resources</span>
+            <div class="resources">
+              <a class="res-link rl-4" href="https://mcreator.net/wiki/section/website" target="_blank">MCreator Publishing Guide</a>
+              <a class="res-link rl-4" href="https://mcreator.net/wiki/modification-publishing-guidelines" target="_blank">Mod Publishing Guidelines</a>
+              <a class="res-link rl-4" href="https://mcreator.net/wiki/general-publishing-guidelines" target="_blank">General Publishing Guidelines</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div>Salem Public Schools · CTE Program · <span>ECS2025</span></div>
+    <div style="margin-top:6px;font-size:13px;">Design → Logic → Interface → Ship · The software lifecycle, one mod at a time.</div>
+  </footer>
+
+  <script>
+    // Generate grass strip
+    const strip = document.getElementById('grass-strip');
+    const count = Math.ceil(window.innerWidth / 32) + 2;
+    for (let i = 0; i < count; i++) {
+      const b = document.createElement('div');
+      b.className = 'grass-block';
+      strip.appendChild(b);
+    }
+
+    // Toggle day cards
+    function toggleDay(btn) {
+      const body = btn.nextElementSibling;
+      const chevron = btn.querySelector('.day-chevron');
+      const isOpen = body.classList.contains('open');
+      body.classList.toggle('open', !isOpen);
+      chevron.classList.toggle('open', !isOpen);
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    }
+
+    // Toggle install reference
+    function toggleInstall(btn) {
+      const body = btn.nextElementSibling;
+      const isOpen = body.classList.contains('open');
+      body.classList.toggle('open', !isOpen);
+      btn.textContent = (isOpen ? '▶' : '▼') + ' Quick Install Reference';
+    }
+  </script>
+
+</body>
+</html>
